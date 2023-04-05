@@ -1,91 +1,107 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:dio/dio.dart';
-import 'package:flutterapp/network/http_request.dart';
-/*网络请求
-* 建议开发中，使用第三方库时都进行一层封装(便于后期维护)*/
+
 main()=>runApp(MyApp());
 
 class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: "网络请求",
-      home: Scaffold(
-        appBar: AppBar(
-          title: Center(child: Text("网络请求"),),
-        ),
-        body:NetPage(),
-      ),
+      title: "Flutter_InheritedWidget",
+      home: HYhomePage(),
     );
   }
 }
-class NetPage extends StatefulWidget {
-  const NetPage({Key? key}) : super(key: key);
 
+/*如果HYshow1和HYshow2 widget都想要共享counter
+* ====>则可以以找到HYshow1和HYshow2共同的父widget，包裹一个继承自InheritedWidget的widget*/
+class HYhomePage extends StatefulWidget {
   @override
-  State<NetPage> createState() => _NetPageState();
+  State<HYhomePage> createState() => _HYhomePageState();
 }
 
-class _NetPageState extends State<NetPage> {
+class _HYhomePageState extends State<HYhomePage> {
 
-  void initState()
-  {
-    super.initState();
-    //发送网络请求
-    /*1、创建dio对象*/
-    //final dio=Dio();
-    /*2、发送网络请求*/
-    //dio.get("https://api.covid19api.com/summary").then((value) => print(value));//发送get请求,get是future类型
-    //dio.post("https://httpbin.org/post").then((value) => print(value));//发送post请求,post是future类型
-    /*3、用封装的方法发送网络请求*/
-    print("\n用封装方法发送网络请求\n");
-    HttpRequest.request("https://movie.douban.com/j/search_subjects?type=movie&tag=%E7%83%AD%E9%97%A8&sort=recommend&page_limit=10&page_start=0",inter:InterceptorsWrapper(),params: {"name":"why"}).then((value){
-      print(value);
-    });
-  }
+  int _counter=100;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-
-      child: ListView.builder(
-          itemBuilder: (BuildContext ctx,int index){
-            return ListTile(
-              title: Text("最新电影信息:"),
-            );
-          },
-          itemCount: 100,
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("flutter"),
+      ),
+      body: HYcounterWidget(
+        counter: _counter,
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              HYshow1(),
+              HYshow2(),
+            ],
+          ),
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        child: Icon(Icons.add),
+        onPressed: (){
+          print("counter+1");
+          setState(()=>_counter++);
+        },
       ),
     );
   }
 }
 
+class HYshow1 extends StatelessWidget {
 
-/*Json转modle*/
-/*电影信息*/
-
-/*
-class MovieItem{
-  String ? episodes_info;
-  double ? rate;
-  String ?title;
-  bool ?is_new;
-  String ?image;
-  String ?url;
-  MovieItem(this.episodes_info,this.rate,this.title,this.is_new,this.image,this.url);
-
-  MovieItem.fromJson(Map<String,dynamic> jsonStr)
-  {
-    episodes_info=jsonStr['episodes_info'];
-    rate=jsonStr['rate'];
-    title=jsonStr['title'];
-    image=jsonStr['cover'];
-  print("${title}");
+  @override
+  Widget build(BuildContext context) {
+    /*将HYshow1的context传入到HYcounterWidget.of中去，HYcounterWidget.of会往上找最近的父widget，查找里面有没有counter属性*/
+    int? counter=HYcounterWidget.of(context)?.counter;
+    return Card(
+      color: Colors.red,
+      child: Text("当前计数：${counter}",style: TextStyle(fontSize: 30),),
+    );
   }
-
 }
-*/
 
+class HYshow2 extends StatelessWidget {
+  const HYshow2({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    int ? counter=HYcounterWidget.of(context)?.counter;
+    return Card(
+      color: Colors.red,
+      child: Text("当前计数：${counter}",style: TextStyle(fontSize: 30),),
+    );
+  }
+}
+
+
+/*用来管理counter的类
+* 需要找到祖先widget进行共享
+* Notes:widget中所有的属性都不能改变*/
+class HYcounterWidget extends InheritedWidget{
+  //final int counter=100;//需共享的变量
+  final int counter;//需共享的变量
+
+  /*用静态的of方法来获取变量
+  * 拿到context，使用context.dependOnInheritedWidgetOfExactType()===>沿着element树找到最近的HYcounterWidget，从element中取出widget对象*/
+  static HYcounterWidget? of(BuildContext context)
+  {
+    return context.dependOnInheritedWidgetOfExactType();
+  }
+  //构造方法==>要求必须传入一个child,把这个孩子交给父类
+  HYcounterWidget({required super.child,required this.counter});
+
+  /*updateShouldNotify===>对比新旧的HYcounterWidget，是否需要对更新相关依赖的widget*/
+  @override
+  bool updateShouldNotify(covariant InheritedWidget oldWidget) {
+    return true;
+  }
+}
 
