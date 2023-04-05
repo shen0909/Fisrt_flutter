@@ -9,7 +9,7 @@ class HYhomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Center(child: Text("首页")),
+        title: Center(child: Text("热门影片")),
       ),
       body:HYHomeContent() ,
     );
